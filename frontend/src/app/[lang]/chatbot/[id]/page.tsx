@@ -120,6 +120,7 @@ export default function Chatbot({ params }: IProps) {
     return console.error("User declined");
   };
 
+  console.log(chatbot)
   return (
     <div className="my-8 mx-16">
       <div className="p-8 flex justify-between items-center bg-white rounded-md">

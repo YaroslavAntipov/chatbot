@@ -52,6 +52,7 @@ export default function Pricing({ data }: PriceProps) {
 
     router.push("/en/login");
   };
+
   return (
     <section className="py-20 bg-black text-gray-100 m:py-12 lg:py-24">
       <div className="container px-4 mx-auto ">
