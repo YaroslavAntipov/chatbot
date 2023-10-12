@@ -51,7 +51,7 @@ module.exports = (config, { strapi }) => {
       locale: ctx.query.locale,
     };
 
-    console.log("page-populate-middleware.js: ctx.query = ", ctx.query);
+    console.error("page-populate-middleware.js: ctx.query = ", ctx.query);
 
     await next();
   };

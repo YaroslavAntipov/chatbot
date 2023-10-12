@@ -1,0 +1,25 @@
+{
+  "kind": "collectionType",
+  "collectionName": "question_types",
+  "info": {
+    "singularName": "question-type",
+    "pluralName": "question-types",
+    "displayName": "Question Type",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "question_answers": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::question-answer.question-answer",
+      "mappedBy": "question_type"
+    }
+  }
+}

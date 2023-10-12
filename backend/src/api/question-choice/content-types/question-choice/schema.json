@@ -1,0 +1,34 @@
+{
+  "kind": "collectionType",
+  "collectionName": "question_choices",
+  "info": {
+    "singularName": "question-choice",
+    "pluralName": "question-choices",
+    "displayName": "Question Choice",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "is_correct": {
+      "type": "boolean"
+    },
+    "question": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::question.question",
+      "inversedBy": "question_choices"
+    },
+    "question_answers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::question-answer.question-answer",
+      "mappedBy": "question_choices_answers"
+    }
+  }
+}

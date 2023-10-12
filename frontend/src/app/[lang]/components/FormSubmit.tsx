@@ -12,7 +12,7 @@ export default function FormSubmit({
   const [email, setEmail] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const token = process.env.NEXT_PUBLIC_STRAPI_FORM_SUBMISSION_TOKEN;
+  const token = process.env.NEXT_PUBLIC_STRAPI_API_TOKEN;
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -64,7 +64,7 @@ export default function FormSubmit({
               />
               <button
                 type="button"
-                className="w-2/5 p-3 font-semibold rounded-r-lg sm:w-1/3 dark:bg-violet-400 dark:text-gray-900"
+                className="w-2/5 p-3 font-semibold rounded-r-lg sm:w-1/3 dark:bg-blue-400 dark:text-gray-900"
                 onClick={handleSubmit}
               >
                 {text}

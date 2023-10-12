@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "question_answers",
+  "info": {
+    "singularName": "question-answer",
+    "pluralName": "question-answers",
+    "displayName": "Question Answer",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "short_answer": {
+      "type": "string"
+    },
+    "true_false_answer": {
+      "type": "boolean"
+    },
+    "question_choices_answers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::question-choice.question-choice",
+      "inversedBy": "question_answers"
+    },
+    "question": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::question.question",
+      "inversedBy": "question_answers"
+    },
+    "user": {
+      "type": "string"
+    },
+    "question_type": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::question-type.question-type",
+      "inversedBy": "question_answers"
+    },
+    "chatbot": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::chatbot.chatbot",
+      "inversedBy": "question_answers"
+    }
+  }
+}
