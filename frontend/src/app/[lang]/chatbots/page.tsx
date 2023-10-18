@@ -1,9 +1,10 @@
 "use client";
 import {
   useAddNewChatbotMutation,
+  useAddRequestMutation,
   useGetChatbotsQuery,
+  useGetUserQuery,
 } from "@/store/api/authApi";
-import { useAppSelector } from "@/store/hook";
 import Link from "next/link";
 import React, { useState } from "react";
 import Loader from "../components/Loader";
@@ -12,6 +13,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useForm, Controller } from "react-hook-form";
 import { NoItems } from "../components/NoItems";
+import { Tooltip } from "flowbite-react";
+import { PricingPlans } from "../components/PricingBadge";
 
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
@@ -24,8 +27,9 @@ export interface INewChatbotForm {
 }
 
 export default function Chatbots() {
-  const id = useAppSelector((state) => state.main.user.id);
+  const { data: user, isLoading: isLoadingUser } = useGetUserQuery();
   const [isOpen, setIsOpen] = useState(false);
+  const [isRequestOpen, setIsRequestOpen] = useState(false);
   const {
     handleSubmit,
     getValues,
@@ -36,14 +40,53 @@ export default function Chatbots() {
     resolver: yupResolver(schema),
   });
   const {
+    handleSubmit: handleRequestSubmit,
+    getValues: getRequestValues,
+    control: controlRequest,
+    formState: { errors: errorsRequest },
+  } = useForm<{ name: string }>({
+    // @ts-ignore
+    resolver: yupResolver(schema),
+  });
+  const {
     data: chatbots,
     isLoading: isLoadingChatbots,
     refetch,
-  } = useGetChatbotsQuery({ id });
+  } = useGetChatbotsQuery({ id: user?.id || 0 });
   const [addNewChatbot, { isLoading: isLoadingAddNew }] =
     useAddNewChatbotMutation();
+  const [addNewRequest, { isLoading: isLoadingRequest }] =
+    useAddRequestMutation();
+  const getTooltipContent = () => {
+    const isPlanSelected = (
+      [PricingPlans.Basic, PricingPlans.Advanced, PricingPlans.Pro] as string[]
+    ).includes(user?.pricingPlan || "");
 
-  if (isLoadingChatbots) {
+    if (!isPlanSelected) {
+      return "Please select some plan on pricing page.";
+    }
+
+    if (
+      user?.pricingPlan === PricingPlans.Basic &&
+      (chatbots?.data.length || 0) >= 2
+    ) {
+      return "Basic plan allows only 2 chatbots. Please upgrade your plan or delete unused chatbots.";
+    }
+
+    if (
+      user?.pricingPlan === PricingPlans.Advanced &&
+      (chatbots?.data.length || 0) >= 5
+    ) {
+      return "Advanced plan allows only 5 chatbots. Please upgrade your plan or delete unused chatbots.";
+    }
+
+    return "";
+  };
+  const isAddNewChatbotDisabled = Boolean(getTooltipContent());
+  const isRequestChatbotCreationVisible =
+    user?.pricingPlan === PricingPlans.Pro;
+
+  if (isLoadingChatbots || isLoadingUser) {
     return <Loader />;
   }
 
@@ -53,11 +96,28 @@ export default function Chatbots() {
     setIsOpen(true);
   };
 
+  const handleRequestChatbotClick = (event: React.MouseEvent) => {
+    event.preventDefault();
+
+    setIsRequestOpen(true);
+  };
+
   const onSubmit = async () => {
     try {
       const data = await getValues();
-      await addNewChatbot({ ...data, creator: id }).unwrap();
+      await addNewChatbot({ ...data, creator: user?.id || 0 }).unwrap();
       setIsOpen(false);
+      await refetch();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onRequestSubmit = async () => {
+    try {
+      const data = await getRequestValues();
+      await addNewRequest({ ...data, creator: user?.id || 0 }).unwrap();
+      setIsRequestOpen(false);
       await refetch();
     } catch (error) {
       console.error(error);
@@ -66,29 +126,59 @@ export default function Chatbots() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={handleNewChatbotClick}
-          className="text-white w-[190px] mx-16 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center bg-blue-600 hover:bg-blue-700 focus:ring-blue-800"
-        >
-          <svg
-            className="w-5 h-5 mr-1 text-gray-800 text-white"
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 18 18"
-          >
-            <path
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 1v16M1 9h16"
-            />
-          </svg>
-          Add New Chatbot
-        </button>
+      <div className="flex justify-end mr-16">
+        <div className="flex">
+          <Tooltip content={getTooltipContent()} placement="bottom">
+            <button
+              type="button"
+              disabled={isAddNewChatbotDisabled}
+              onClick={handleNewChatbotClick}
+              data-tooltip-target="tooltip-default"
+              className="text-white w-[190px] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center bg-blue-600 hover:bg-blue-700 focus:ring-blue-800 disabled:bg-gray-600 disabled:cursor-not-allowed"
+            >
+              <svg
+                className="w-5 h-5 mr-1 text-gray-800 text-white"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 18 18"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 1v16M1 9h16"
+                />
+              </svg>
+              Add New Chatbot
+            </button>
+          </Tooltip>
+          {isRequestChatbotCreationVisible && (
+            <button
+              type="button"
+              onClick={handleRequestChatbotClick}
+              className="text-white w-[240px] ml-4 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center bg-blue-600 hover:bg-blue-700 focus:ring-blue-800 disabled:bg-gray-600 disabled:cursor-not-allowed"
+            >
+              <svg
+                className="w-5 h-5 mr-1 text-gray-800 text-white"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 18 18"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 1v16M1 9h16"
+                />
+              </svg>
+              Request Chatbot Creation
+            </button>
+          )}
+        </div>
       </div>
 
       {chatbots?.data && chatbots.data.length ? (
@@ -207,6 +297,39 @@ export default function Chatbots() {
           {errors.active && (
             <p className="text-red-500">{errors.active.message}</p>
           )}
+        </div>
+      </Modal>
+      <Modal
+        title="Request Chatbot Creation"
+        isOpen={isRequestOpen}
+        isLoading={isLoadingRequest}
+        onSave={() => handleRequestSubmit(onRequestSubmit)()}
+        onClose={() => setIsRequestOpen(false)}
+      >
+        <div className="grid grid-cols-1 gap-4 my-4">
+          <div>
+            <label htmlFor="name" className="text-gray-300 mb-1">
+              Please describe your chatbot requirements and we will try to
+              create exactly what you want.
+            </label>
+            <Controller
+              name="name"
+              control={controlRequest}
+              defaultValue=""
+              render={({ field }) => (
+                <textarea
+                  {...field}
+                  id="name"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Chatbot Requirements"
+                />
+              )}
+            />
+            {errorsRequest.name && (
+              <p className="text-red-500">{errorsRequest.name.message}</p>
+            )}
+          </div>
         </div>
       </Modal>
     </div>

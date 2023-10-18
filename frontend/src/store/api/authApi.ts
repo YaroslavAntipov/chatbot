@@ -101,6 +101,13 @@ export const authApi = createApi({
       }),
       invalidatesTags: ["CHATBOTS"],
     }),
+    addRequest: builder.mutation<void, { name: string; creator: number }>({
+      query: (data) => ({
+        url: `/api/requests`,
+        method: "POST",
+        body: { data },
+      }),
+    }),
     updateQuestion: builder.mutation<
       IResponse<IStrapi<IQuestion>>,
       IAddEditQuestionForm & { id: number }
@@ -212,4 +219,5 @@ export const {
   useDeleteQuestionChoiceMutation,
   useAddAnswerMutation,
   useGetAnswersQuery,
+  useAddRequestMutation
 } = authApi;

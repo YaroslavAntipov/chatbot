@@ -73,6 +73,12 @@
       "relation": "oneToMany",
       "target": "api::chatbot.chatbot",
       "mappedBy": "creator"
+    },
+    "request": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::request.request",
+      "inversedBy": "creator"
     }
   }
 }
