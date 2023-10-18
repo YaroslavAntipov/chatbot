@@ -1,7 +1,11 @@
 "use client";
-import { useUpdatePricingPlanMutation } from "@/store/api/authApi";
+import {
+  useGetUserQuery,
+  useUpdatePricingPlanMutation,
+} from "@/store/api/authApi";
 import { useAppSelector } from "@/store/hook";
 import { useRouter } from "next/navigation";
+import { md5 } from "js-md5";
 
 interface Feature {
   id: string;
@@ -32,26 +36,72 @@ interface PriceProps {
 
 export default function Pricing({ data }: PriceProps) {
   const isAuthenticated = useAppSelector((state) => state.main.isAuthenticated);
-  const id = useAppSelector((state) => state.main.user.id);
+  const { data: user } = useGetUserQuery();
   const router = useRouter();
   const [updatePricingPlan] = useUpdatePricingPlanMutation();
 
-  const handleClick = (pricingPlan: string) => async () => {
-    if (isAuthenticated) {
-      const agreed = confirm("Do you want to select this plan?");
+  const handleClick =
+    (pricingPlan: string, pricingPlanPrice: number) => async () => {
+      if (isAuthenticated) {
+        const agreed = confirm("Do you want to select this plan?");
 
-      if (agreed) {
-        try {
-          return await updatePricingPlan({ pricingPlan, id }).unwrap();
-        } catch (error) {
-          return console.error(error);
+        if (agreed) {
+          try {
+            if (pricingPlanPrice > 0) {
+              const wayforpay = new (window as any).Wayforpay();
+              const [firstName, secondName] = (user?.username || "").split(" ");
+              const orderReference = Math.round(Math.random() * 10000);
+              const orderDate = Date.now();
+              wayforpay.run(
+                {
+                  merchantAccount:
+                    "ec2_3_75_170_66_eu_central_1_compute_amazonaw",
+                  merchantDomainName:
+                    "http://ec2-3-75-170-66.eu-central-1.compute.amazonaws.com:3000/",
+                  merchantTransactionSecureType: "AUTO",
+                  merchantSignature: md5.hmac.hex(
+                    "2e42e59eb892adcf764034a847dc281c4eab9cb2",
+                    `ec2_3_75_170_66_eu_central_1_compute_amazonaw;http://ec2-3-75-170-66.eu-central-1.compute.amazonaws.com:3000/;${orderReference};${orderDate};${pricingPlanPrice};USD;${pricingPlan};1;${pricingPlanPrice}`
+                  ),
+                  orderReference: orderReference,
+                  orderDate,
+                  productName: [pricingPlan],
+                  productPrice: [pricingPlanPrice],
+                  productCount: [1],
+                  amount: pricingPlanPrice,
+                  currency: "USD",
+                  clientFirstName: firstName,
+                  clientLastName: secondName,
+                  clientPhone: "380662392400",
+                  clientEmail: user?.email,
+                  language: "UA",
+                },
+                async function (response: any) {
+                  console.log("success", response);
+                  return await updatePricingPlan({
+                    pricingPlan,
+                    id: user?.id || 0,
+                  }).unwrap();
+                },
+                function (response: any) {
+                  console.log("error", response);
+                }
+              );
+            } else {
+              return await updatePricingPlan({
+                pricingPlan,
+                id: user?.id || 0,
+              }).unwrap();
+            }
+          } catch (error) {
+            return console.error(error);
+          }
         }
+        return console.error("User declined");
       }
-      return console.error("User declined");
-    }
 
-    router.push("/en/login");
-  };
+      router.push("/en/login");
+    };
 
   return (
     <section className="py-20 bg-black text-gray-100 m:py-12 lg:py-24">
@@ -79,9 +129,7 @@ export default function Pricing({ data }: PriceProps) {
                     {plan.price}$
                     <span
                       className={`ml-1 text-sm tracking-wid ${
-                        plan.isRecommended
-                          ? "text-gray-900"
-                          : "text-blue-500"
+                        plan.isRecommended ? "text-gray-900" : "text-blue-500"
                       }`}
                     >
                       /{plan.pricePeriod.toLowerCase()}
@@ -90,9 +138,7 @@ export default function Pricing({ data }: PriceProps) {
                 </div>
                 <p
                   className={`mt-3 leading-relaxed text-lg font-bold ${
-                    plan.isRecommended
-                      ? "text-gray-900"
-                      : "text-gray-400"
+                    plan.isRecommended ? "text-gray-900" : "text-gray-400"
                   }`}
                 >
                   {plan.description}
@@ -111,9 +157,7 @@ export default function Pricing({ data }: PriceProps) {
                         viewBox="0 0 20 20"
                         fill="currentColor"
                         className={`flex-shrink-0 w-6 h-6 ${
-                          plan.isRecommended
-                            ? "text-gray-900"
-                            : "text-gray-400"
+                          plan.isRecommended ? "text-gray-900" : "text-gray-400"
                         }`}
                       >
                         <path
@@ -133,7 +177,7 @@ export default function Pricing({ data }: PriceProps) {
                       ? "bg-gray-900 text-blue-400 hover:bg-gray-700 hover:text-blue-300"
                       : "bg-blue-400 text-gray-900 hover:bg-gray-700 hover:text-blue-300"
                   }`}
-                  onClick={handleClick(plan.name)}
+                  onClick={handleClick(plan.name, plan.price)}
                 >
                   Select
                 </button>

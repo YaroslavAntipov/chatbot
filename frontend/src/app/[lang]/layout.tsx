@@ -81,6 +81,13 @@ export default async function RootLayout({
 
   return (
     <html lang={params.lang}>
+      <head>
+        <script
+          id="widget-wfp-script"
+          type="text/javascript"
+          src="https://secure.wayforpay.com/server/pay-widget.js"
+        ></script>
+      </head>
       <body>
         <Provider>
           <Navbar
